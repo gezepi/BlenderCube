@@ -1,16 +1,20 @@
 """
 	Uses the MCP2210 library from https://github.com/ondra/mcp2210
 """
-#from mcp2210 import MCP2210
 import time
 import os
-from mathutils import Vector
 import sys
+includeSPI = False
+try:
+	from mcp2210 import MCP2210
+	ignoreSPI = True
+except:
+	pass
 
 includeBlender = any("Blender Foundation" in path for path in sys.path)
 print("Include Blender pieces of code? {0}".format(includeBlender))
 
-print("BlenderCube.py in {0}".format(os.path.dirname(os.path.realpath(__file__))))
+print("Running from {0}".format(os.path.dirname(os.path.realpath(__file__))))
 
 vid = 0x4D8
 pid = 0xDE
@@ -21,29 +25,32 @@ cubeCenter = (0, 0, 0)
 cubeWidth = 1	#Length of one side in Blender
 cubeSize = 8	#Number of points on a side
 
-def setupSPI():
-    spiDev = MCP2210(vid, pid)
-    print(dev.product_name)
-    print(dev.manufacturer_name)
-    
-    settings = dev.boot_chip_settings
-    settings.pin_designations[0] = 0x01	#GPIO 3(??) as CS
-    dev.boot_chip_settings = settings
+if includeSPI:
+	def setupSPI():
+		spiDev = MCP2210(vid, pid)
+		print(dev.product_name)
+		print(dev.manufacturer_name)
+		
+		settings = dev.boot_chip_settings
+		settings.pin_designations[0] = 0x01	#GPIO 3(??) as CS
+		dev.boot_chip_settings = settings
 
-    spisettings = dev.boot_transfer_settings
-    spisettings.idle_cs = 0x01
-    spisettings.active_cs = 0x00
-    dev.boot_transfer_settings = spisettings
+		spisettings = dev.boot_transfer_settings
+		spisettings.idle_cs = 0x01
+		spisettings.active_cs = 0x00
+		dev.boot_transfer_settings = spisettings
 
-def sendDebug():
-    i = 0
-    while(1):
-    	print("Transferring {0}...".format(i))
-    	dev.transfer([chr(0x7F), chr(0x77), chr(0xDD), chr(i)])
-    	i += 1
-    	time.sleep(1)	#seconds
+	def sendDebug():
+		i = 0
+		while(1):
+			print("Transferring {0}...".format(i))
+			dev.transfer([chr(0x7F), chr(0x77), chr(0xDD), chr(i)])
+			i += 1
+			time.sleep(1)	#seconds
 
 if includeBlender:
+	from mathutils import Vector
+	
 	def newPoint(name, verts):
 		me = bpy.data.meshes.new(name+'Mesh')
 		ob = bpy.data.objects.new(name, me)
@@ -90,6 +97,3 @@ if includeBlender:
 	lit = [is_inside(x, 1.84e+19, bpy.context.active_object) for x in leds]
 	print(len(lit))
 	print(lit)
-	
-	
-
