@@ -4,6 +4,9 @@
 import time
 import os
 import sys
+from array import array
+import numpy
+
 includeSPI = False
 try:
 	from mcp2210 import MCP2210
@@ -13,7 +16,7 @@ except:
 
 includeBlender = any("Blender Foundation" in path for path in sys.path)
 print("Include Blender pieces of code? {0}".format(includeBlender))
-
+print("Include SPI pieces of code? {0}".format(includeSPI))
 print("Running from {0}".format(os.path.dirname(os.path.realpath(__file__))))
 
 vid = 0x4D8
@@ -47,6 +50,11 @@ if includeSPI:
 			dev.transfer([chr(0x7F), chr(0x77), chr(0xDD), chr(i)])
 			i += 1
 			time.sleep(1)	#seconds
+			
+	def outputCube(data):
+		for z in range(8):
+			for i in range(8):
+			dev.transfer([chr(z)] + data[i])
 
 if includeBlender:
 	from mathutils import Vector
@@ -62,16 +70,11 @@ if includeBlender:
 		return ob
 		
 	def is_inside(p, max_dist, obj):
-		# max_dist = 1.84467e+19
-		# From http://blender.stackexchange.com/questions/31693/how-do-find-in-a-point-is-inside-a-mesh
-		#[print(x) for x in dir(obj)]
 		ret = obj.closest_point_on_mesh(p, max_dist)
-		#print(ret[1:4])
 		point, normal, face = ret[1:4]
 		p2 = point-p
 		v = p2.dot(normal)
-		#print(v)
-		return not(v < 0.0)
+		return 1 if not(v < 0.0) else 0
 		
 	def getVertices(center, width, size):
 		verts = []
@@ -85,15 +88,19 @@ if includeBlender:
 		print("Num points:{0}".format(len(verts)))
 		return verts
 	
-	location = bpy.context.scene.cursor_location
+	def setObjectMode(mode):
+		if bpy.context.active_object.mode != mode:
+			bpy.ops.object.editmode_toggle()
 	
-	if bpy.context.active_object.mode != 'OBJECT':
-		bpy.ops.object.editmode_toggle()
-	
+	setObjectMode('OBJECT')
 	leds = getVertices(cubeCenter, cubeWidth, cubeSize)
-	newPoint("Cube", leds)
+	newPoint("LED_Cube", leds)
 	
-	#[print(x) for x in dir(bpy.context.active_object)]
 	lit = [is_inside(x, 1.84e+19, bpy.context.active_object) for x in leds]
-	print(len(lit))
-	print(lit)
+	newlit = [lit[i:i+8] for i in range(64)]
+	chrList = [chr(int(''.join(map(str,x)),2)) for x in newlit]
+	print(type(chrList))
+	print(chrList)
+	print(type(lit))
+	print(len(chrList))
+	#print(lit)

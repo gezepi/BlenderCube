@@ -101,7 +101,6 @@ def main(context, num):
     bpy.context.scene.objects.link(ob_new)
     bpy.context.scene.update()
 
-
 class PointCloudGenerator(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "object.pointcloud"
@@ -131,7 +130,6 @@ def register():
     bpy.utils.register_class(PointCloudGenerator)
     bpy.types.VIEW3D_PT_tools_object.prepend(draw_func)
     print("Registered")
-
 
 def unregister():
     bpy.utils.unregister_class(PointCloudGenerator)
