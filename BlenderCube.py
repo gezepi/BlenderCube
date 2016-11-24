@@ -103,6 +103,25 @@ if includeBlender:
 		print(chrList)
 		print(type(lit))
 		print(len(chrList))
+		
+	def displayCube(litVerts):
+		i = 0
+		for ob in bpy.context.scene.objects:
+			ob.select = (ob.type == 'MESH' and 'led_' in ob.name)
+			i += 1
+		print("Deleting {0} items".format(i))
+		bpy.ops.object.delete()
+		
+		s = .1
+		
+		for v in litVerts:
+			bpy.ops.mesh.primitive_cube_add(radius=s)
+			led = bpy.context.object
+			led.name = 'led_{0}'.format(v)
+			bpy.ops.object.select_all(action='DESELECT')
+			
+			
+			
 	
 	def updateCube(scene):
 		#Get LED Cubes
@@ -118,6 +137,7 @@ if includeBlender:
 				bodies.append(ob)
 		
 		lit = []
+		litVertices = []
 		
 		from mathutils import Matrix
 		
@@ -129,10 +149,17 @@ if includeBlender:
 			matrixRev = Matrix.Translation((-moveX, -moveY, -moveZ))
 			b.data.transform(matrixFwd)
 			b.data.update()
+			
+			#for v in plain_verts:
+			#	i = is_inside(v, 1e+19, b)
+			#	lit.append(i)
+			#	if i == 1:
+			#		litVertices.append(v)
+					
 			lit = lit + [is_inside(x, 1e+19, b) for x in plain_verts]
 			b.data.transform(matrixRev)
 			b.data.update()
-			
+		#displayCube(litVertices)
 		print("{0} intersecting LEDs".format(sum(lit)))
 		
 	class MakeLedCube(bpy.types.Operator):
