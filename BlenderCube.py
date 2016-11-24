@@ -110,39 +110,30 @@ if includeBlender:
 		#Cube vertices
 		verts = [cur_cube.matrix_world * vert.co for vert in cur_cube.data.vertices]
 		plain_verts = [Vector(v.to_tuple()) for v in verts]
-		#print(plain_verts)
 			
 		#Get intersecting bodies
 		bodies = []
 		for ob in scene.objects:
 			if ob.type == 'MESH' and ob.name != "LED Cube":
 				bodies.append(ob)
-		#print("Colliding bodies:{0}".format(len(bodies)))
 		
 		lit = []
-		#print("{0} bodies to check".format(len(bodies)))
+		
+		from mathutils import Matrix
+		
 		for b in bodies:
-			#print("Checking collision for {0}".format(b.name))
-			newVerts = [b.matrix_world * v.co for v in b.data.vertices]
-			newBmesh = bpy.data.meshes.new(b.name + "_globalVertsMesh")
-			#[print(e) for e in b.data.edges]
-			newBmesh.from_pydata(newVerts, [], [(3,2,0,1),(1,0,4,5),(5,7,3,1),(2,3,7,6),(5,4,6,7),(0,2,6,4)])
-			newB = bpy.data.objects.new(b.name + "_globalVerts", newBmesh)
-			#print(dir(newB.data))
+			moveX = b.location[0]
+			moveY = b.location[1]
+			moveZ = b.location[2]
+			matrixFwd = Matrix.Translation((moveX, moveY, moveZ))
+			matrixRev = Matrix.Translation((-moveX, -moveY, -moveZ))
+			b.data.transform(matrixFwd)
+			b.data.update()
+			lit = lit + [is_inside(x, 1e+19, b) for x in plain_verts]
+			b.data.transform(matrixRev)
+			b.data.update()
 			
-			#print("b:{0}\tnewB:{1}".format(type(b), type(newB)))
-			#[print(b.matrix_world * v.co) for v in newB.data.vertices]
-			#[print(v) for v in plain_verts]
-			scene.objects.link(newB)
-			scene.update()
-			
-			lit = lit + [is_inside(x, 1e+19, newB) for x in plain_verts]
 		print("{0} intersecting LEDs".format(sum(lit)))
-	
-		#Remove old ghost boxes
-		for ob in scene.objects:
-			ob.select = (ob.type == 'MESH' and '_global' in ob.name)
-		bpy.ops.object.delete()
 		
 	class MakeLedCube(bpy.types.Operator):
 		"""Makes a cube of LEDs that can be interacted with"""
