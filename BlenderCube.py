@@ -41,6 +41,7 @@ if includeSPI:
 		spisettings = dev.boot_transfer_settings
 		spisettings.idle_cs = 0x01
 		spisettings.active_cs = 0x00
+		spisettings.spi_tx_size = cubeSize * 2
 		dev.boot_transfer_settings = spisettings
 
 	def sendDebug():
@@ -55,6 +56,22 @@ if includeSPI:
 		for z in range(cubeSize):
 			for i in range(cubeSize):
 				dev.transfer([chr(z)] + data[i])
+	
+	def maxTransferAll(address, value):
+		#CS
+		for i in range(cubeSize):
+			dev.transfer(address)
+			dev.transfer(value)
+		#CS
+	def cubeTest():
+		for i in range(cubeSize):
+			maxTransferAll(i+1, 0xFF)
+			time.sleep(.5)
+		for i in range(cubeSize):
+			maxTransferAll(i+1, 0x00)
+			time.sleep(.5)
+
+	cubeTest()
 
 if includeBlender:
 	from mathutils import Vector
