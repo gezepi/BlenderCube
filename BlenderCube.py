@@ -42,7 +42,21 @@ if includeSPI:
 		spisettings.idle_cs = 0x01
 		spisettings.active_cs = 0x00
 		spisettings.spi_tx_size = cubeSize * 2
-		spiDev.boot_transfer_settings = spisettings
+		spisettings.interbyte_delay = 0x0000	#number of 100us delays between data bytes
+		spisettings.cs_data_delay = 0x0000		#number of 100us delays to first byte
+		print(sys.getsizeof(spisettings.cs_data_delay))
+		print(sys.getsizeof(spisettings.bit_rate))
+		spisettings.bit_rate = 100000			#Bits per second to send (max 12,000,000)
+		spiDev.transfer_settings = spisettings
+		
+		
+		#// Initialize MAX7219 IC
+		maxTransferAll(0x0F, 0x00);   #// 00 - Turn off Test mode
+		maxTransferAll(0x09, 0x00);   #// Register 09 - BCD Decoding  // 0 = No decoding
+		maxTransferAll(0x0B, 0x07);   #// Register B - Scan limit 1-7  // 7 = All LEDS
+		maxTransferAll(0x0C, 0x01);   #// 01 = on 00 = Power saving mode or shutdown
+		maxTransferAll(0x0A, 0x0A);   #// brightness value 0x01 to 0x0F
+		#time.sleep(5)
 
 	def sendDebug():
 		i = 0
@@ -58,16 +72,20 @@ if includeSPI:
 				spiDev.transfer([chr(z)] + data[i])
 	
 	def maxTransferAll(address, value):
-		print("Sending {0} to {1}".format(value, address))
+		address = chr(address)
+		value = chr(value)
+		 #":".join("{:02x}".format(ord(c)) for c in s)
+		print("Sending 0x{:02X} to 0x{:02X}".format(ord(value), ord(address)))
 		sendVal = (address + value) * cubeSize
+		#print("Sending len {0}".format(len(sendVal)))
 		spiDev.transfer(sendVal)
 		
 	def cubeTest():
 		for i in range(cubeSize):
-			maxTransferAll('\{0}'.format(i+1), '\0xFF')
+			maxTransferAll(i+1, 0xFF)
 			time.sleep(.5)
 		for i in range(cubeSize):
-			maxTransferAll('\{0}'.format(i+1), '\0x00')
+			maxTransferAll(i+1, 0x00)
 			time.sleep(.5)
 
 	setupSPI()
