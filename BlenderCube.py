@@ -4,13 +4,12 @@
 import time
 import os
 import sys
-import mathutils
 import math
 
 includeSPI = False
 try:
 	from mcp2210 import MCP2210
-	ignoreSPI = True
+	includeSPI = True
 except:
 	pass
 
@@ -30,50 +29,54 @@ cubeSize = 8	#Number of points on a side
 
 if includeSPI:
 	def setupSPI():
+		global spiDev
 		spiDev = MCP2210(vid, pid)
-		print(dev.product_name)
-		print(dev.manufacturer_name)
+		print(spiDev.product_name)
+		print(spiDev.manufacturer_name)
 		
-		settings = dev.boot_chip_settings
+		settings = spiDev.boot_chip_settings
 		settings.pin_designations[0] = 0x01	#GPIO 3(??) as CS
-		dev.boot_chip_settings = settings
+		spiDev.boot_chip_settings = settings
 
-		spisettings = dev.boot_transfer_settings
+		spisettings = spiDev.boot_transfer_settings
 		spisettings.idle_cs = 0x01
 		spisettings.active_cs = 0x00
 		spisettings.spi_tx_size = cubeSize * 2
-		dev.boot_transfer_settings = spisettings
+		spiDev.boot_transfer_settings = spisettings
 
 	def sendDebug():
 		i = 0
 		while(1):
 			print("Transferring {0}...".format(i))
-			dev.transfer([chr(0x7F), chr(0x77), chr(0xDD), chr(i)])
+			spiDev.transfer([chr(0x7F), chr(0x77), chr(0xDD), chr(i)])
 			i += 1
 			time.sleep(1)	#seconds
 			
 	def outputCube(data):
 		for z in range(cubeSize):
 			for i in range(cubeSize):
-				dev.transfer([chr(z)] + data[i])
+				spiDev.transfer([chr(z)] + data[i])
 	
 	def maxTransferAll(address, value):
-		#CS
-		for i in range(cubeSize):
-			dev.transfer(address)
-			dev.transfer(value)
-		#CS
+		print("Sending {0} to {1}".format(value, address))
+		sendVal = (address + value) * cubeSize
+		spiDev.transfer(sendVal)
+		
 	def cubeTest():
 		for i in range(cubeSize):
-			maxTransferAll(i+1, 0xFF)
+			maxTransferAll('\{0}'.format(i+1), '\0xFF')
 			time.sleep(.5)
 		for i in range(cubeSize):
-			maxTransferAll(i+1, 0x00)
+			maxTransferAll('\{0}'.format(i+1), '\0x00')
 			time.sleep(.5)
 
-	cubeTest()
+	setupSPI()
+	while(1):
+		cubeTest()
+		time.sleep(1)
 
 if includeBlender:
+	import mathutils
 	from mathutils import Vector
 	
 	def newPoints(name, verts, context):
